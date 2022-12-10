@@ -1,4 +1,4 @@
-# Reinforcement-Learning demo
+# Reinforcement Learning Demo
 
 我的第一个开源项目
 
