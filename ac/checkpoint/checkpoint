@@ -1,0 +1,2 @@
+model_checkpoint_path: "ac_CarPole-actor.ckpt"
+all_model_checkpoint_paths: "ac_CarPole-actor.ckpt"
