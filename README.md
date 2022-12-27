@@ -41,8 +41,6 @@ Advantage ActorCritic
 
 DDPG
 
-PPO
-
 TD3
 
 SAC
