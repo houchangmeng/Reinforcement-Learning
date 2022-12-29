@@ -46,3 +46,5 @@ TD3
 SAC
 
 SAC with automatic entropy tuning
+
+PPO
