@@ -4,9 +4,12 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import copy
 tfd = tfp.distributions
-demo_path = "/home/ubuntu-1/Learning/ReinforcementLearning/demo/a8_PPO_v5"
+demo_path = "/home/ubuntu-1/Learning/ReinforcementLearning/demo/a8_PPO_v2"
 
 class Agent(object):
+	'''
+	PPO Agent with random replay buffer and simple target.
+	'''
     def __init__(
         self,
         learning_rate = 1e-4,
