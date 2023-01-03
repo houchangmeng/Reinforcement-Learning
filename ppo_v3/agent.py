@@ -9,12 +9,12 @@ import copy
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 
-demo_path = "/home/ubuntu-1/Learning/ReinforcementLearning/demo/a8_PPO_v1"
+demo_path = "/home/ubuntu-1/Learning/ReinforcementLearning/demo/a8_PPO_v3"
 
 class Agent(object):
-	'''
-	PPO Agent with discount target.
-	'''
+    '''
+    Basic PPO Agent : gae.
+    '''
     def __init__(
         self,
         observation_shape=(3,),
@@ -29,6 +29,7 @@ class Agent(object):
         self.lr = tf.constant(learning_rate,dtype=tf.float32)
         self.gamma = tf.constant(gamma,dtype=tf.float32)
         self.clip_param = 0.2
+        self.lamda = 0.95
 
         self.critic_optimizer = tf.optimizers.Adam(learning_rate=2e-4,clipvalue=1.0)
         self.actor_optimizer = tf.optimizers.Adam(learning_rate=1e-4,clipvalue=1.0)
@@ -42,33 +43,29 @@ class Agent(object):
         action = np.clip(action[0],-1.0,1.0)
         log_pi = pi.log_prob(action)
         return action,log_pi.numpy()[0]
-    
-    def discount_reward(self,rewards,observation):
-        observation = tf.convert_to_tensor([observation],dtype=tf.float32)
-        target = self.critic(observation)[0]             
-        target_list = []
-        for r in rewards[::-1]:
-            target = r + self.gamma * target
-            target_list.append(target)
-        target_list.reverse()
-        return target_list
-    
-    def learn(self,observation_list,action_list,target_list,log_prob_list):
+
+    def learn(self,observation_list,action_list,reward_list,next_observation_list,done_list,log_prob_list):
         
         observations = tf.convert_to_tensor(observation_list)
         actions = tf.convert_to_tensor(action_list)
-        targets = tf.convert_to_tensor(target_list)
-
-        # old_mu,old_sigma = self.actor(observations)
-        # old_pi = tfd.Normal(loc=old_mu,scale = old_sigma)
-        # old_pi_log_prob = old_pi.log_prob(actions)
+        rewards = tf.expand_dims(tf.convert_to_tensor(reward_list,dtype=tf.float32),axis=-1)
+        next_observations = tf.convert_to_tensor(next_observation_list)
+        dones = tf.expand_dims(tf.convert_to_tensor(done_list,dtype=tf.float32),axis=-1)
         old_pi_log_prob = tf.convert_to_tensor(log_prob_list)
 
-        v_value = self.critic(observations)
-        advantages = targets - v_value
+        value_next_obs = self.critic(next_observations)
+        value_obs = self.critic(observations)
+
+        adv = []
+        gae = 0
+        for r, d, vs_, vs in zip(rewards[::-1], dones[::-1],value_next_obs[::-1],value_obs[::-1]):
+            delta = r + self.gamma * (1.0 - d) * vs_ - vs
+            gae = delta + self.gamma * self.lamda * gae * (1.0 - d)
+            adv.insert(0, gae)
+        advantages = tf.convert_to_tensor(adv)
+        targets = adv + value_obs
 
         for _ in range(10):
-
             with tf.GradientTape() as tape:
                 mu,sigma = self.actor(observations)
                 pi = tfd.Normal(mu,sigma)
@@ -100,12 +97,3 @@ class Agent(object):
 
         self.actor.load_weights(demo_path+"/checkpoint/ppo_actor.ckpt")
         self.critic.load_weights(demo_path+"/checkpoint/ppo_critic.ckpt")
-    
-
-       
-        
-            
-            
-
-
-
