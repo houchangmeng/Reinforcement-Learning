@@ -48,3 +48,6 @@ SAC
 SAC with automatic entropy tuning
 
 PPO
+
+Behavior Cloning
+
